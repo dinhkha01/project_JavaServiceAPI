@@ -10,6 +10,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -22,6 +23,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true) // Thêm để hỗ trợ @PreAuthorize
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -89,22 +91,26 @@ public class SecurityConfig {
                         // 6. STUDENT ENDPOINTS - Chỉ STUDENT và ADMIN
                         .requestMatchers("/api/student/**").hasAnyRole("STUDENT", "ADMIN")
 
-                        // 7. COURSE ENDPOINTS - Tùy thuộc vào phương thức HTTP
-                        .requestMatchers("GET", "/api/courses/**").permitAll() // Xem khóa học public
-                        .requestMatchers("POST", "/api/courses").hasAnyRole("TEACHER", "ADMIN") // Tạo khóa học
-                        .requestMatchers("PUT", "/api/courses/**").hasAnyRole("TEACHER", "ADMIN") // Sửa khóa học
-                        .requestMatchers("DELETE", "/api/courses/**").hasAnyRole("TEACHER", "ADMIN") // Xóa khóa học
+                        // 7. COURSE ENDPOINTS - Tùy thuộc vào phương thức HTTP và được cập nhật theo yêu cầu
+                        .requestMatchers("GET", "/api/courses").authenticated() // Xem danh sách khóa học cần auth
+                        .requestMatchers("GET", "/api/courses/**").authenticated() // Xem chi tiết khóa học cần auth
+                        .requestMatchers("POST", "/api/courses").hasRole("ADMIN") // Tạo khóa học chỉ ADMIN
+                        .requestMatchers("PUT", "/api/courses/**").hasRole("ADMIN") // Sửa khóa học chỉ ADMIN
+                        .requestMatchers("DELETE", "/api/courses/**").hasRole("ADMIN") // Xóa khóa học chỉ ADMIN
 
-                        // 8. ENROLLMENT ENDPOINTS - Cần xác thực
+                        // 8. LESSON ENDPOINTS - Cần xác thực
+                        .requestMatchers("GET", "/api/lessons/**").authenticated()
+
+                        // 9. ENROLLMENT ENDPOINTS - Cần xác thực
                         .requestMatchers("/api/enrollments/**").authenticated()
 
-                        // 9. REVIEW ENDPOINTS - Cần xác thực
+                        // 10. REVIEW ENDPOINTS - Cần xác thực
                         .requestMatchers("/api/reviews/**").authenticated()
 
-                        // 10. NOTIFICATION ENDPOINTS - Cần xác thực
+                        // 11. NOTIFICATION ENDPOINTS - Cần xác thực
                         .requestMatchers("/api/notifications/**").authenticated()
 
-                        // 11. Tất cả endpoints khác cần xác thực
+                        // 12. Tất cả endpoints khác cần xác thực
                         .anyRequest().authenticated()
                 )
 

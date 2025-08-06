@@ -53,7 +53,7 @@ public class Course {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
-    // Relationships
+
     @ManyToOne(fetch = FetchType.LAZY)
     private User teacher;
 

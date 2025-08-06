@@ -64,7 +64,7 @@ public class AuthenticationServiceImpl implements IAuthenticationService {
         account.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         account.setEmail(request.getEmail());
         account.setFullName(request.getFullName());
-        account.setRole(Role.ROLE_ADMIN);
+        account.setRole(Role.ROLE_STUDENT);
         account.setIsActive(true);
 
         User savedUser = accountRepository.save(account);

@@ -57,13 +57,4 @@ public class Enrollment {
 
     @OneToMany(mappedBy = "enrollment", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<LessonProgress> lessonProgresses;
-
-    // Helper methods to get IDs if needed
-    public Integer getStudentId() {
-        return student != null ? student.getUserId() : null;
-    }
-
-    public Integer getCourseId() {
-        return course != null ? course.getCourseId() : null;
-    }
 }
