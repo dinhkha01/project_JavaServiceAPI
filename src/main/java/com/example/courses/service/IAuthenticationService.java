@@ -2,8 +2,10 @@ package com.example.courses.service;
 
 import com.example.courses.model.dto.request.FormLogin;
 import com.example.courses.model.dto.request.FormRegister;
+import com.example.courses.model.dto.request.LogoutRequest;
 import com.example.courses.model.dto.request.TokenVerifyRequest;
 import com.example.courses.model.dto.response.JwtResponse;
+import com.example.courses.model.dto.response.LogoutResponse;
 import com.example.courses.model.dto.response.TokenVerifyResponse;
 import com.example.courses.model.dto.response.UserProfileResponse;
 import com.example.courses.model.entity.User;
@@ -40,4 +42,19 @@ public interface IAuthenticationService {
      * @return UserProfileResponse thông tin user
      */
     UserProfileResponse getCurrentUserProfile(String username);
+
+    /**
+     * Đăng xuất và invalidate token
+     * @param request thông tin đăng xuất
+     * @param username tên user hiện tại
+     * @return LogoutResponse kết quả đăng xuất
+     */
+    LogoutResponse logout(LogoutRequest request, String username);
+
+    /**
+     * Đăng xuất khỏi tất cả thiết bị
+     * @param username tên user cần logout
+     * @return LogoutResponse kết quả đăng xuất
+     */
+    LogoutResponse logoutFromAllDevices(String username);
 }

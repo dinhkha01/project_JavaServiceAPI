@@ -80,6 +80,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/me").authenticated()
                         .requestMatchers("/api/auth/hello").authenticated()
 
+                        // ===== LOGOUT ENDPOINTS - Cần xác thực =====
+                        .requestMatchers(HttpMethod.POST, "/api/auth/logout").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/logout/all").authenticated()
+
                         // ===== ADMIN ENDPOINTS - Chỉ ADMIN =====
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
 

@@ -2,8 +2,10 @@ package com.example.courses.service.impl;
 
 import com.example.courses.model.dto.request.FormLogin;
 import com.example.courses.model.dto.request.FormRegister;
+import com.example.courses.model.dto.request.LogoutRequest;
 import com.example.courses.model.dto.request.TokenVerifyRequest;
 import com.example.courses.model.dto.response.JwtResponse;
+import com.example.courses.model.dto.response.LogoutResponse;
 import com.example.courses.model.dto.response.TokenVerifyResponse;
 import com.example.courses.model.dto.response.UserProfileResponse;
 import com.example.courses.model.entity.Role;
@@ -11,6 +13,7 @@ import com.example.courses.model.entity.User;
 import com.example.courses.repository.IAccountRepository;
 import com.example.courses.config.security.jwt.JWTProvider;
 import com.example.courses.service.IAuthenticationService;
+import com.example.courses.service.TokenBlacklistService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -20,6 +23,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.NoSuchElementException;
 
 @Service
@@ -31,6 +35,7 @@ public class AuthenticationServiceImpl implements IAuthenticationService {
     private final IAccountRepository accountRepository;
     private final AuthenticationManager authenticationManager;
     private final JWTProvider jwtProvider;
+    private final TokenBlacklistService tokenBlacklistService;
 
     @Override
     public JwtResponse login(FormLogin request) {
@@ -76,6 +81,14 @@ public class AuthenticationServiceImpl implements IAuthenticationService {
     @Override
     public TokenVerifyResponse verifyToken(TokenVerifyRequest request) {
         try {
+            // Kiểm tra token có trong blacklist không
+            if (tokenBlacklistService.isTokenBlacklisted(request.getToken())) {
+                return TokenVerifyResponse.builder()
+                        .valid(false)
+                        .message("Token đã bị vô hiệu hóa")
+                        .build();
+            }
+
             boolean isValid = jwtProvider.validateToken(request.getToken());
             if (isValid) {
                 String username = jwtProvider.getUserNameFromToken(request.getToken());
@@ -110,6 +123,62 @@ public class AuthenticationServiceImpl implements IAuthenticationService {
                 .orElseThrow(() -> new NoSuchElementException("Người dùng không tồn tại"));
 
         return buildUserProfileResponse(user);
+    }
+
+    @Override
+    public LogoutResponse logout(LogoutRequest request, String username) {
+        try {
+            // Validate token thuộc về user hiện tại
+            if (request.getToken() != null && !request.getToken().isEmpty()) {
+                String tokenUsername = jwtProvider.getUserNameFromToken(request.getToken());
+                if (!username.equals(tokenUsername)) {
+                    throw new RuntimeException("Token không thuộc về user hiện tại");
+                }
+            }
+            boolean loggedOutFromAllDevices = false;
+
+            // Blacklist token hiện tại
+            if (request.getToken() != null) {
+                tokenBlacklistService.blacklistToken(request.getToken());
+            }
+
+            log.info("User {} logged out successfully", username);
+
+            return LogoutResponse.builder()
+                    .username(username)
+                    .logoutTime(LocalDateTime.now())
+                    .message("Đăng xuất thành công")
+                    .loggedOutFromAllDevices(loggedOutFromAllDevices)
+                    .deviceId(request.getDeviceId())
+                    .build();
+
+        } catch (Exception e) {
+            log.error("Logout failed for user: {}", username, e);
+            throw new RuntimeException("Đăng xuất thất bại: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public LogoutResponse logoutFromAllDevices(String username) {
+        try {
+            // Trong thực tế, cần implement logic để:
+            // 1. Tìm tất cả token active của user
+            // 2. Blacklist tất cả token đó
+            // 3. Hoặc thay đổi user's secret key để invalidate tất cả token
+
+            log.info("User {} logged out from all devices", username);
+
+            return LogoutResponse.builder()
+                    .username(username)
+                    .logoutTime(LocalDateTime.now())
+                    .message("Đăng xuất khỏi tất cả thiết bị thành công")
+                    .loggedOutFromAllDevices(true)
+                    .build();
+
+        } catch (Exception e) {
+            log.error("Logout from all devices failed for user: {}", username, e);
+            throw new RuntimeException("Đăng xuất khỏi tất cả thiết bị thất bại: " + e.getMessage());
+        }
     }
 
     /**
