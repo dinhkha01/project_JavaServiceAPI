@@ -17,11 +17,8 @@ import com.example.courses.service.CourseService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import jakarta.persistence.criteria.Predicate;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -39,28 +36,18 @@ public class CourseServiceImpl implements CourseService {
     @Override
     @Transactional(readOnly = true)
     public Page<CourseResponse> getAllCourses(Pageable pageable, CourseStatus status, String keyword) {
-        Specification<Course> spec = (root, query, criteriaBuilder) -> {
-            List<Predicate> predicates = new ArrayList<>();
+        return getAllCoursesWithFilters(pageable, status, keyword, null);
+    }
 
-            // Lọc theo trạng thái nếu có
-            if (status != null) {
-                predicates.add(criteriaBuilder.equal(root.get("status"), status));
-            }
+    @Override
+    @Transactional(readOnly = true)
+    public Page<CourseResponse> getAllCoursesWithFilters(Pageable pageable, CourseStatus status, String keyword, Integer teacherId) {
+        // Chuẩn hóa keyword - nếu empty string thì set thành null để query bỏ qua điều kiện
+        String normalizedKeyword = (keyword != null && !keyword.trim().isEmpty()) ? keyword.trim() : null;
 
-            // Tìm kiếm theo từ khóa trong tiêu đề hoặc mô tả
-            if (keyword != null && !keyword.trim().isEmpty()) {
-                String searchPattern = "%" + keyword.trim().toLowerCase() + "%";
-                Predicate titlePredicate = criteriaBuilder.like(
-                        criteriaBuilder.lower(root.get("title")), searchPattern);
-                Predicate descriptionPredicate = criteriaBuilder.like(
-                        criteriaBuilder.lower(root.get("description")), searchPattern);
-                predicates.add(criteriaBuilder.or(titlePredicate, descriptionPredicate));
-            }
+        // Gọi duy nhất 1 method trong repository với tất cả tham số
+        Page<Course> coursePage = courseRepository.findCoursesWithFilters(status, teacherId, normalizedKeyword, pageable);
 
-            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
-        };
-
-        Page<Course> coursePage = courseRepository.findAll(spec, pageable);
         return coursePage.map(this::convertToCourseResponse);
     }
 
@@ -78,8 +65,8 @@ public class CourseServiceImpl implements CourseService {
         // Kiểm tra giảng viên tồn tại
         User teacher = userRepository.findById(request.getTeacherId())
                 .orElseThrow(() -> new NotFoundException("Không tìm thấy giảng viên với ID: " + request.getTeacherId()));
-        System.out.println("Teacher found: " + teacher.getRole());
-//         Kiểm tra role của user có phải là TEACHER không
+
+        // Kiểm tra role của user có phải là TEACHER không
         if (!teacher.getRole().name().equals("ROLE_TEACHER")) {
             throw new BadRequestException("User không có quyền làm giảng viên");
         }

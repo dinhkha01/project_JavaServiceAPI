@@ -35,11 +35,89 @@ public class CourseController {
     private final LessonService lessonService;
 
     /**
-     * GET /api/courses - Lấy danh sách tất cả khóa học (có thể lọc theo trạng thái PUBLISHED)
+     * GET /api/courses - Lấy danh sách tất cả khóa học với các tùy chọn lọc
+     * Hỗ trợ các tham số:
+     * - search: tìm kiếm theo từ khóa trong tiêu đề/mô tả
+     * - teacher_id: lọc theo giảng viên
+     * - status: lọc theo trạng thái khóa học
+     * - keyword: tìm kiếm theo từ khóa (tương tự search)
      * Quyền: AUTHENTICATED
      */
     @GetMapping
     public ResponseEntity<DataResponse<Page<CourseResponse>>> getAllCourses(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir,
+            @RequestParam(required = false) CourseStatus status,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String search,
+            @RequestParam(name = "teacher_id", required = false) Integer teacherId
+    ) {
+        try {
+            Sort sort = sortDir.equalsIgnoreCase("desc")
+                    ? Sort.by(sortBy).descending()
+                    : Sort.by(sortBy).ascending();
+
+            Pageable pageable = PageRequest.of(page, size, sort);
+
+            // Ưu tiên search parameter hơn keyword parameter
+            String searchKeyword = search != null ? search : keyword;
+
+            Page<CourseResponse> courses = courseService.getAllCoursesWithFilters(
+                    pageable, status, searchKeyword, teacherId);
+
+            return ResponseEntity.ok(DataResponse.success(courses, "Lấy danh sách khóa học thành công"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(DataResponse.error("Lỗi khi lấy danh sách khóa học: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * GET /api/courses/search - Endpoint riêng cho tìm kiếm khóa học
+     * Quyền: AUTHENTICATED
+     */
+    @GetMapping("/search")
+    public ResponseEntity<DataResponse<Page<CourseResponse>>> searchCourses(
+            @RequestParam String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir,
+            @RequestParam(required = false) CourseStatus status,
+            @RequestParam(name = "teacher_id", required = false) Integer teacherId
+    ) {
+        try {
+            // Validate keyword không được rỗng
+            if (keyword == null || keyword.trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(DataResponse.error("Từ khóa tìm kiếm không được để trống"));
+            }
+
+            Sort sort = sortDir.equalsIgnoreCase("desc")
+                    ? Sort.by(sortBy).descending()
+                    : Sort.by(sortBy).ascending();
+
+            Pageable pageable = PageRequest.of(page, size, sort);
+            Page<CourseResponse> courses = courseService.getAllCoursesWithFilters(
+                    pageable, status, keyword.trim(), teacherId);
+
+            return ResponseEntity.ok(DataResponse.success(courses,
+                    "Tìm kiếm khóa học với từ khóa '" + keyword + "' thành công"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(DataResponse.error("Lỗi khi tìm kiếm khóa học: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * GET /api/courses/by-teacher/{teacherId} - Lấy danh sách khóa học theo giảng viên
+     * Quyền: AUTHENTICATED
+     */
+    @GetMapping("/by-teacher/{teacherId}")
+    public ResponseEntity<DataResponse<Page<CourseResponse>>> getCoursesByTeacher(
+            @PathVariable Integer teacherId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
@@ -53,12 +131,14 @@ public class CourseController {
                     : Sort.by(sortBy).ascending();
 
             Pageable pageable = PageRequest.of(page, size, sort);
-            Page<CourseResponse> courses = courseService.getAllCourses(pageable, status, keyword);
+            Page<CourseResponse> courses = courseService.getAllCoursesWithFilters(
+                    pageable, status, keyword, teacherId);
 
-            return ResponseEntity.ok(DataResponse.success(courses, "Lấy danh sách khóa học thành công"));
+            return ResponseEntity.ok(DataResponse.success(courses,
+                    "Lấy danh sách khóa học của giảng viên thành công"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(DataResponse.error("Lỗi khi lấy danh sách khóa học: " + e.getMessage()));
+                    .body(DataResponse.error("Lỗi khi lấy danh sách khóa học theo giảng viên: " + e.getMessage()));
         }
     }
 
@@ -87,6 +167,7 @@ public class CourseController {
      * Quyền: ADMIN
      */
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<DataResponse<CourseResponse>> createCourse(
             @Valid @RequestBody CourseCreateRequest request
     ) {
@@ -111,6 +192,7 @@ public class CourseController {
      * Quyền: ADMIN
      */
     @PutMapping("/{courseId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<DataResponse<CourseResponse>> updateCourse(
             @PathVariable Integer courseId,
             @Valid @RequestBody CourseUpdateRequest request
@@ -135,6 +217,7 @@ public class CourseController {
      * Quyền: ADMIN
      */
     @PutMapping("/{courseId}/status")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<DataResponse<CourseResponse>> updateCourseStatus(
             @PathVariable Integer courseId,
             @Valid @RequestBody CourseStatusUpdateRequest request
@@ -159,6 +242,7 @@ public class CourseController {
      * Quyền: ADMIN
      */
     @DeleteMapping("/{courseId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<DataResponse<Void>> deleteCourse(
             @PathVariable Integer courseId
     ) {
@@ -196,11 +280,13 @@ public class CourseController {
                     .body(DataResponse.error("Lỗi khi lấy danh sách bài học: " + e.getMessage()));
         }
     }
+
     /**
-     * Thêm bài học mới vào khóa học
+     * POST /api/courses/{course_id}/lessons - Thêm bài học mới vào khóa học
      * Quyền: TEACHER (phải là người phụ trách khóa học) hoặc ADMIN
      */
     @PostMapping("/{courseId}/lessons")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public ResponseEntity<DataResponse<LessonResponse>> createLesson(
             @PathVariable Integer courseId,
             @Valid @RequestBody LessonCreateRequest request) throws BadRequestException, NotFoundException {

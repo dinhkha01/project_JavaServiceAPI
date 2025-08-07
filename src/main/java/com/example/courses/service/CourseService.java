@@ -12,6 +12,10 @@ import org.springframework.data.domain.Pageable;
 
 public interface CourseService {
     Page<CourseResponse> getAllCourses(Pageable pageable, CourseStatus status, String keyword);
+
+    // Thêm method mới để tìm kiếm với nhiều filter hơn
+    Page<CourseResponse> getAllCoursesWithFilters(Pageable pageable, CourseStatus status, String keyword, Integer teacherId);
+
     CourseDetailResponse getCourseDetail(Integer courseId) throws NotFoundException;
     CourseResponse createCourse(CourseCreateRequest request) throws BadRequestException, NotFoundException;
     CourseResponse updateCourse(Integer courseId, CourseUpdateRequest request) throws NotFoundException, BadRequestException;
