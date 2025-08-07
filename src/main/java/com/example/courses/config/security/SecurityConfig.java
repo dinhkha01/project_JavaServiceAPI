@@ -6,6 +6,7 @@ import com.example.courses.config.security.jwt.JWTAuthTokenFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -23,7 +24,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity(prePostEnabled = true) // Thêm để hỗ trợ @PreAuthorize
+@EnableMethodSecurity(prePostEnabled = true)
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -58,7 +59,7 @@ public class SecurityConfig {
     }
 
     /**
-     * Cấu hình Security Filter Chain với logic phân quyền cho hệ thống khóa học
+     * Cấu hình Security Filter Chain với logic phân quyền chi tiết
      */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -69,48 +70,77 @@ public class SecurityConfig {
 
                 // Cấu hình phân quyền truy cập
                 .authorizeHttpRequests(request -> request
-                        // 1. PUBLIC ENDPOINTS - Không cần xác thực
+                        // ===== PUBLIC ENDPOINTS - Không cần xác thực =====
                         .requestMatchers("/api/auth/register").permitAll()
                         .requestMatchers("/api/auth/login").permitAll()
                         .requestMatchers("/public/**").permitAll()
 
-                        // 2. AUTHENTICATED ENDPOINTS - Cần xác thực JWT
+                        // ===== AUTHENTICATED ENDPOINTS - Cần xác thực JWT =====
                         .requestMatchers("/api/auth/verify").authenticated()
                         .requestMatchers("/api/auth/me").authenticated()
                         .requestMatchers("/api/auth/hello").authenticated()
 
-                        // 3. ADMIN ENDPOINTS - Chỉ ADMIN
+                        // ===== ADMIN ENDPOINTS - Chỉ ADMIN =====
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
-                        // 4. USER MANAGEMENT ENDPOINTS - Chỉ ADMIN
-                        .requestMatchers("/api/users/**").hasRole("ADMIN")
+                        // ===== USER MANAGEMENT ENDPOINTS =====
+                        // Lấy danh sách users, tạo user mới - chỉ ADMIN
+                        .requestMatchers(HttpMethod.GET, "/api/users").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/users").hasRole("ADMIN")
 
-                        // 5. TEACHER ENDPOINTS - Chỉ TEACHER và ADMIN
+                        // Lấy thông tin user - ADMIN hoặc chính user đó (sẽ check trong controller)
+                        .requestMatchers(HttpMethod.GET, "/api/users/*").authenticated()
+
+                        // Cập nhật thông tin cá nhân - OWNER_OR_ADMIN (sẽ check trong service)
+                        .requestMatchers(HttpMethod.PUT, "/api/users/*").authenticated()
+
+                        // Đổi mật khẩu - OWNER_OR_ADMIN (sẽ check trong service)
+                        .requestMatchers(HttpMethod.PUT, "/api/users/*/password").authenticated()
+
+                        // Cập nhật role/status và xóa user - chỉ ADMIN
+                        .requestMatchers(HttpMethod.PUT, "/api/users/*/role").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/users/*/status").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/users/*").hasRole("ADMIN")
+
+                        // ===== TEACHER ENDPOINTS - TEACHER và ADMIN =====
                         .requestMatchers("/api/teacher/**").hasAnyRole("TEACHER", "ADMIN")
 
-                        // 6. STUDENT ENDPOINTS - Chỉ STUDENT và ADMIN
+                        // ===== STUDENT ENDPOINTS - STUDENT và ADMIN =====
                         .requestMatchers("/api/student/**").hasAnyRole("STUDENT", "ADMIN")
 
-                        // 7. COURSE ENDPOINTS - Tùy thuộc vào phương thức HTTP và được cập nhật theo yêu cầu
-                        .requestMatchers("GET", "/api/courses").authenticated() // Xem danh sách khóa học cần auth
-                        .requestMatchers("GET", "/api/courses/**").authenticated() // Xem chi tiết khóa học cần auth
-                        .requestMatchers("POST", "/api/courses").hasRole("ADMIN") // Tạo khóa học chỉ ADMIN
-                        .requestMatchers("PUT", "/api/courses/**").hasRole("ADMIN") // Sửa khóa học chỉ ADMIN
-                        .requestMatchers("DELETE", "/api/courses/**").hasRole("ADMIN") // Xóa khóa học chỉ ADMIN
+                        // ===== COURSE ENDPOINTS - Phân quyền theo HTTP method =====
+                        .requestMatchers(HttpMethod.GET, "/api/courses").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/courses/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/courses").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/courses/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/courses/**").hasRole("ADMIN")
 
-                        // 8. LESSON ENDPOINTS - Cần xác thực
-                        .requestMatchers("GET", "/api/lessons/**").authenticated()
+                        // ===== LESSON ENDPOINTS - TEACHER và ADMIN =====
+                        .requestMatchers(HttpMethod.POST, "/api/courses/*/lessons").hasAnyRole("TEACHER", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/lessons/**").hasAnyRole("TEACHER", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/lessons/**").hasAnyRole("TEACHER", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/lessons/**").authenticated()
 
-                        // 9. ENROLLMENT ENDPOINTS - Cần xác thực
-                        .requestMatchers("/api/enrollments/**").authenticated()
+                        // ===== ENROLLMENT ENDPOINTS - STUDENT và ADMIN =====
+                        // GET /api/enrollments - Lấy danh sách đăng ký của mình
+                        .requestMatchers(HttpMethod.GET, "/api/enrollments").hasAnyRole("STUDENT", "ADMIN")
 
-                        // 10. REVIEW ENDPOINTS - Cần xác thực
+                        // POST /api/enrollments - Đăng ký khóa học mới
+                        .requestMatchers(HttpMethod.POST, "/api/enrollments").hasAnyRole("STUDENT", "ADMIN")
+
+                        // GET /api/enrollments/{id} - Lấy chi tiết đăng ký
+                        .requestMatchers(HttpMethod.GET, "/api/enrollments/*").hasAnyRole("STUDENT", "ADMIN")
+
+                        // PUT /api/enrollments/{id}/complete_lesson/{lesson_id} - Hoàn thành bài học
+                        .requestMatchers(HttpMethod.PUT, "/api/enrollments/*/complete_lesson/*").hasAnyRole("STUDENT", "ADMIN")
+
+                        // ===== REVIEW ENDPOINTS - Cần xác thực =====
                         .requestMatchers("/api/reviews/**").authenticated()
 
-                        // 11. NOTIFICATION ENDPOINTS - Cần xác thực
+                        // ===== NOTIFICATION ENDPOINTS - Cần xác thực =====
                         .requestMatchers("/api/notifications/**").authenticated()
 
-                        // 12. Tất cả endpoints khác cần xác thực
+                        // ===== Tất cả endpoints khác cần xác thực =====
                         .anyRequest().authenticated()
                 )
 

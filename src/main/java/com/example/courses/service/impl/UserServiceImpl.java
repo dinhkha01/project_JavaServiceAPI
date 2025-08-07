@@ -3,6 +3,8 @@ package com.example.courses.service.impl;
 import com.example.courses.exception.BadRequestException;
 import com.example.courses.exception.NotFoundException;
 import com.example.courses.model.dto.request.CreateUserRequest;
+import com.example.courses.model.dto.request.UpdateUserInfoRequest;
+import com.example.courses.model.dto.request.ChangePasswordRequest;
 import com.example.courses.model.dto.response.*;
 import com.example.courses.model.entity.Role;
 import com.example.courses.model.entity.User;
@@ -21,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -74,6 +77,73 @@ public class UserServiceImpl implements IUserService {
     }
 
     @Override
+    public UserDetailResponse updateUserInfo(Integer userId, UpdateUserInfoRequest request, String currentUsername)
+            throws NotFoundException, BadRequestException {
+
+        User user = findUserByIdOrThrow(userId);
+        User currentUser = getCurrentUser(currentUsername);
+
+        // Kiểm tra quyền: chỉ admin hoặc chính người dùng đó mới có thể cập nhật
+        validateOwnershipOrAdmin(user, currentUser);
+
+        // Kiểm tra email có bị trùng không (trừ email hiện tại)
+        if (!user.getEmail().equals(request.getEmail()) &&
+                userRepository.existsByEmail(request.getEmail())) {
+            Map<String, String> errors = new HashMap<>();
+            errors.put("email", "Email đã được sử dụng");
+            throw new RuntimeException("Email đã tồn tại");
+        }
+
+        // Cập nhật thông tin
+        user.setFullName(request.getFullName());
+        user.setEmail(request.getEmail());
+
+        User updatedUser = userRepository.save(user);
+
+        log.info("Updated user info for: {} by: {}", user.getUsername(), currentUsername);
+        return convertToUserDetailResponse(updatedUser);
+    }
+
+    @Override
+    public void changePassword(Integer userId, ChangePasswordRequest request, String currentUsername)
+            throws NotFoundException, BadRequestException {
+
+        User user = findUserByIdOrThrow(userId);
+        User currentUser = getCurrentUser(currentUsername);
+
+        // Kiểm tra quyền: chỉ admin hoặc chính người dùng đó mới có thể đổi mật khẩu
+        validateOwnershipOrAdmin(user, currentUser);
+
+        // Validate password confirmation
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new RuntimeException("Xác nhận mật khẩu không khớp");
+        }
+
+        // Nếu không phải admin, phải kiểm tra mật khẩu hiện tại
+        if (!currentUser.getRole().equals(Role.ROLE_ADMIN)) {
+            // Kiểm tra mật khẩu hiện tại có được cung cấp không
+            if (request.getCurrentPassword() == null || request.getCurrentPassword().trim().isEmpty()) {
+                Map<String, String> errors = new HashMap<>();
+                errors.put("currentPassword", "Mật khẩu hiện tại không được để trống");
+                throw new RuntimeException("Mật khẩu hiện tại không được để trống");
+            }
+
+            // Kiểm tra mật khẩu hiện tại có đúng không
+            if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
+                Map<String, String> errors = new HashMap<>();
+                errors.put("currentPassword", "Mật khẩu hiện tại không chính xác");
+                throw new RuntimeException("Mật khẩu hiện tại không chính xác");
+            }
+        }
+
+        // Cập nhật mật khẩu mới
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        log.info("Changed password for user: {} by: {}", user.getUsername(), currentUsername);
+    }
+
+    @Override
     public UserDetailResponse updateUserRole(Integer userId, Role newRole) throws NotFoundException {
         User user = findUserByIdOrThrow(userId);
         Role oldRole = user.getRole();
@@ -104,6 +174,29 @@ public class UserServiceImpl implements IUserService {
 
         userRepository.delete(user);
         log.info("Deleted user: {}", user.getUsername());
+    }
+
+    /**
+     * Get current user from username
+     */
+    private User getCurrentUser(String username) throws NotFoundException, BadRequestException {
+        if (username == null) {
+            throw new RuntimeException("Không thể xác định người dùng hiện tại");
+        }
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy người dùng hiện tại"));
+    }
+
+    /**
+     * Validate that current user is owner or admin
+     */
+    private void validateOwnershipOrAdmin(User targetUser, User currentUser)  {
+        boolean isOwner = Objects.equals(targetUser.getUserId(), currentUser.getUserId());
+        boolean isAdmin = currentUser.getRole().equals(Role.ROLE_ADMIN);
+
+        if (!isOwner && !isAdmin) {
+            throw new RuntimeException("Bạn không có quyền thực hiện hành động này");
+        }
     }
 
     /**
@@ -173,11 +266,11 @@ public class UserServiceImpl implements IUserService {
      */
     private void validateUserDeletionConstraints(User user) throws BadRequestException {
         if (user.getCoursesAsTeacher() != null && !user.getCoursesAsTeacher().isEmpty()) {
-            throw new BadRequestException("Không thể xóa người dùng vì đang có khóa học được tạo bởi người này");
+            throw new RuntimeException("Không thể xóa người dùng vì đang có khóa học được tạo bởi người này");
         }
 
         if (user.getEnrollments() != null && !user.getEnrollments().isEmpty()) {
-            throw new BadRequestException("Không thể xóa người dùng vì đang có đăng ký khóa học");
+            throw new RuntimeException("Không thể xóa người dùng vì đang có đăng ký khóa học");
         }
     }
 
@@ -195,14 +288,12 @@ public class UserServiceImpl implements IUserService {
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
                 .build();
-    } 
+    }
 
     /**
      * Convert User entity to UserDetailResponse DTO
      */
     private UserDetailResponse convertToUserDetailResponse(User user) {
-
-
         return UserDetailResponse.builder()
                 .userId(user.getUserId())
                 .username(user.getUsername())

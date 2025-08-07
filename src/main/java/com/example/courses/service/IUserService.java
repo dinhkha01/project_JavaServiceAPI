@@ -3,6 +3,8 @@ package com.example.courses.service;
 import com.example.courses.exception.BadRequestException;
 import com.example.courses.exception.NotFoundException;
 import com.example.courses.model.dto.request.CreateUserRequest;
+import com.example.courses.model.dto.request.UpdateUserInfoRequest;
+import com.example.courses.model.dto.request.ChangePasswordRequest;
 import com.example.courses.model.dto.response.UserDetailResponse;
 import com.example.courses.model.dto.response.UserListResponse;
 import com.example.courses.model.entity.Role;
@@ -41,6 +43,29 @@ public interface IUserService {
      * @throws BadRequestException nếu dữ liệu không hợp lệ
      */
     UserDetailResponse createUser(CreateUserRequest request) throws BadRequestException;
+
+    /**
+     * Cập nhật thông tin cá nhân của người dùng
+     * @param userId ID của user
+     * @param request thông tin cập nhật
+     * @param currentUsername username của người thực hiện request
+     * @return UserDetailResponse user sau khi update
+     * @throws NotFoundException nếu không tìm thấy user
+     * @throws BadRequestException nếu không có quyền hoặc dữ liệu không hợp lệ
+     */
+    UserDetailResponse updateUserInfo(Integer userId, UpdateUserInfoRequest request, String currentUsername)
+            throws NotFoundException, BadRequestException;
+
+    /**
+     * Đổi mật khẩu của người dùng
+     * @param userId ID của user
+     * @param request thông tin đổi mật khẩu
+     * @param currentUsername username của người thực hiện request
+     * @throws NotFoundException nếu không tìm thấy user
+     * @throws BadRequestException nếu không có quyền hoặc dữ liệu không hợp lệ
+     */
+    void changePassword(Integer userId, ChangePasswordRequest request, String currentUsername)
+            throws NotFoundException, BadRequestException;
 
     /**
      * Cập nhật vai trò của người dùng

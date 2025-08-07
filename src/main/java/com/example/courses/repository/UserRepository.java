@@ -1,5 +1,6 @@
 package com.example.courses.repository;
 
+import com.example.courses.exception.BadRequestException;
 import com.example.courses.model.entity.Role;
 import com.example.courses.model.entity.User;
 import org.springframework.data.domain.Page;
@@ -18,6 +19,7 @@ public interface UserRepository extends JpaRepository<User, Integer> {
      * Kiểm tra username đã tồn tại
      */
     boolean existsByUsername(String username);
+
 
     /**
      * Kiểm tra email đã tồn tại
@@ -59,4 +61,6 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     Page<User> searchByKeywordAndRole(@Param("keyword") String keyword,
                                       @Param("role") Role role,
                                       Pageable pageable);
+
+    Optional<User> findByUsername(String username);
 }

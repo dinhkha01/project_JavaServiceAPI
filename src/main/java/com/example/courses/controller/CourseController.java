@@ -5,6 +5,7 @@ import com.example.courses.exception.NotFoundException;
 import com.example.courses.model.dto.request.CourseCreateRequest;
 import com.example.courses.model.dto.request.CourseUpdateRequest;
 import com.example.courses.model.dto.request.CourseStatusUpdateRequest;
+import com.example.courses.model.dto.request.LessonCreateRequest;
 import com.example.courses.model.dto.response.DataResponse;
 import com.example.courses.model.dto.response.CourseResponse;
 import com.example.courses.model.dto.response.CourseDetailResponse;
@@ -194,5 +195,18 @@ public class CourseController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(DataResponse.error("Lỗi khi lấy danh sách bài học: " + e.getMessage()));
         }
+    }
+    /**
+     * Thêm bài học mới vào khóa học
+     * Quyền: TEACHER (phải là người phụ trách khóa học) hoặc ADMIN
+     */
+    @PostMapping("/{courseId}/lessons")
+    public ResponseEntity<DataResponse<LessonResponse>> createLesson(
+            @PathVariable Integer courseId,
+            @Valid @RequestBody LessonCreateRequest request) throws BadRequestException, NotFoundException {
+
+        LessonResponse lesson = lessonService.createLesson(courseId, request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(DataResponse.success(lesson, "Tạo bài học thành công"));
     }
 }

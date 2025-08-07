@@ -5,6 +5,8 @@ import com.example.courses.exception.NotFoundException;
 import com.example.courses.model.dto.request.CreateUserRequest;
 import com.example.courses.model.dto.request.UpdateUserRoleRequest;
 import com.example.courses.model.dto.request.UpdateUserStatusRequest;
+import com.example.courses.model.dto.request.UpdateUserInfoRequest;
+import com.example.courses.model.dto.request.ChangePasswordRequest;
 import com.example.courses.model.dto.response.*;
 import com.example.courses.model.entity.Role;
 import com.example.courses.service.IUserService;
@@ -13,13 +15,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
 @Slf4j
-public class AdminUserController {
+public class UserController {
 
     private final IUserService userService;
 
@@ -83,6 +87,42 @@ public class AdminUserController {
     }
 
     /**
+     * PUT /api/users/{user_id} - Cập nhật thông tin cá nhân của người dùng
+     */
+    @PutMapping("/{userId}")
+    public ResponseEntity<DataResponse<UserDetailResponse>> updateUserInfo(
+            @PathVariable Integer userId,
+            @Valid @RequestBody UpdateUserInfoRequest request,
+            Authentication authentication) throws NotFoundException, BadRequestException {
+
+        String currentUsername = getCurrentUsername(authentication);
+        UserDetailResponse updatedUser = userService.updateUserInfo(userId, request, currentUsername);
+
+        return ResponseEntity.ok(DataResponse.success(
+                updatedUser,
+                "Cập nhật thông tin người dùng thành công"
+        ));
+    }
+
+    /**
+     * PUT /api/users/{user_id}/password - Đổi mật khẩu của người dùng
+     */
+    @PutMapping("/{userId}/password")
+    public ResponseEntity<DataResponse<Void>> changePassword(
+            @PathVariable Integer userId,
+            @Valid @RequestBody ChangePasswordRequest request,
+            Authentication authentication) throws NotFoundException, BadRequestException {
+
+        String currentUsername = getCurrentUsername(authentication);
+        userService.changePassword(userId, request, currentUsername);
+
+        return ResponseEntity.ok(DataResponse.success(
+                null,
+                "Đổi mật khẩu thành công"
+        ));
+    }
+
+    /**
      * PUT /api/users/{user_id}/role - Cập nhật vai trò của người dùng
      */
     @PutMapping("/{userId}/role")
@@ -122,5 +162,15 @@ public class AdminUserController {
 
         userService.deleteUser(userId);
         return ResponseEntity.ok(DataResponse.success(null, "Xóa người dùng thành công"));
+    }
+
+    /**
+     * Helper method to get current username from authentication
+     */
+    private String getCurrentUsername(Authentication authentication) {
+        if (authentication != null && authentication.getPrincipal() instanceof UserDetails) {
+            return ((UserDetails) authentication.getPrincipal()).getUsername();
+        }
+        return null;
     }
 }
