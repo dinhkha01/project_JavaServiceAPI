@@ -3,7 +3,7 @@ package com.example.courses.controller;
 import com.example.courses.exception.NotFoundException;
 import com.example.courses.model.dto.response.StudentProgressResponse;
 import com.example.courses.model.dto.response.TeacherCoursesOverviewResponse;
-import com.example.courses.model.entity.Course;
+import com.example.courses.model.dto.response.TopCourseResponse;
 import com.example.courses.service.ReportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -19,13 +19,13 @@ public class ReportController {
 
     private final ReportService reportService;
 
-    @GetMapping("/top_courses")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Page<Course>> getTopCourses(Pageable pageable) {
-
-        Page<Course> topCourses = reportService.getTopCourses(pageable);
-        return ResponseEntity.ok(topCourses);
-    }
+//    @GetMapping("/top_courses")
+//    @PreAuthorize("hasRole('ADMIN')")
+//    public ResponseEntity<Page<TopCourseResponse>> getTopCourses(Pageable pageable) {
+//
+//        Page<TopCourseResponse> topCourses = reportService.getTopCourses(pageable);
+//        return ResponseEntity.ok(topCourses);
+//    }
 
     @GetMapping("/student_progress/{student_id}")
     @PreAuthorize("hasRole('ADMIN')")

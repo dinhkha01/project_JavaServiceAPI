@@ -24,9 +24,9 @@ public class ReportService {
     /**
      * Lấy danh sách các khóa học phổ biến nhất theo số lượt đăng ký
      */
-    public Page<Course> getTopCourses(Pageable pageable) {
-        return courseRepository.findTopCoursesByEnrollments(pageable);
-    }
+//    public Page<TopCourseResponse> getTopCourses(Pageable pageable) {
+//        return courseRepository.findTopCoursesByEnrollments(pageable);
+//    }
 
     /**
      * Thống kê tiến độ học của một sinh viên cụ thể

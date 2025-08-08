@@ -32,24 +32,31 @@ public interface CourseRepository extends JpaRepository<Course, Integer> {
     /**
      * Lấy danh sách các khóa học phổ biến nhất theo số lượt đăng ký
      */
-    @Query("SELECT new com.example.courses.model.dto.response.TopCourseResponse(" +
-            "c.courseId, c.title, c.description, c.teacherId, t.fullName, c.price, " +
-            "COUNT(DISTINCT e), " +
-            "COALESCE(AVG(r.rating), 0.0), " +
-            "COUNT(DISTINCT r), " +
-            "COUNT(DISTINCT l), " +
-            "SUM(CASE WHEN l.isPublished = true THEN 1 ELSE 0 END), " +
-            "COALESCE(SUM(CASE WHEN e.enrollmentId IS NOT NULL THEN c.price ELSE 0 END), 0), " +
-            "CAST(c.status AS string), c.createdAt, c.updatedAt) " +
-            "FROM Course c " +
-            "LEFT JOIN c.teacher t " +
-            "LEFT JOIN c.enrollments e " +
-            "LEFT JOIN c.reviews r " +
-            "LEFT JOIN c.lessons l " +
-            "WHERE c.status = 'PUBLISHED' " +
-            "GROUP BY c.courseId, c.title, c.description, c.teacherId, t.fullName, c.price, c.status, c.createdAt, c.updatedAt " +
-            "ORDER BY COUNT(DISTINCT e) DESC")
-    Page<TopCourseResponse> findTopCoursesByEnrollments(Pageable pageable);
+//    @Query("SELECT new com.example.courses.model.dto.response.TopCourseResponse(" +
+//            "c.courseId, " +
+//            "c.title, " +
+//            "c.description, " +
+//            "c.teacherId, " +
+//            "t.fullName, " +
+//            "c.price, " +
+//            "COUNT(DISTINCT e), " +
+//            "COALESCE(AVG(r.rating), 0.0), " +
+//            "COUNT(DISTINCT r), " +
+//            "COUNT(DISTINCT l), " +
+//            "SUM(CASE WHEN l.isPublished = true THEN 1L ELSE 0L END), " +
+//            "SUM(c.price), " +
+//            "c.status, " +
+//            "c.createdAt, " +
+//            "c.updatedAt) " +
+//            "FROM Course c " +
+//            "LEFT JOIN c.teacher t " +
+//            "LEFT JOIN c.enrollments e " +
+//            "LEFT JOIN c.reviews r " +
+//            "LEFT JOIN c.lessons l " +
+//            "WHERE c.status = 'PUBLISHED' " +
+//            "GROUP BY c.courseId, c.title, c.description, c.teacherId, t.fullName, c.price, c.status, c.createdAt, c.updatedAt " +
+//            "ORDER BY COUNT(DISTINCT e) DESC")
+//    Page<TopCourseResponse> findTopCoursesByEnrollments(Pageable pageable);
 
     /**
      * Thống kê tiến độ học của một sinh viên cụ thể
