@@ -26,25 +26,19 @@ public class User {
     private Integer userId;
 
     @Column(name = "username", unique = true, nullable = false, length = 50)
-    @NotBlank(message = "Username không được để trống")
     private String username;
 
     @Column(name = "password_hash", nullable = false)
-    @NotBlank(message = "Password không được để trống")
     private String passwordHash;
 
     @Column(name = "email", unique = true, nullable = false, length = 100)
-    @Email(message = "Email không đúng định dạng")
-    @NotBlank(message = "Email không được để trống")
     private String email;
 
     @Column(name = "full_name", nullable = false, length = 100)
-    @NotBlank(message = "Họ tên không được để trống")
     private String fullName;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
-    @NotNull(message = "Role không được để trống")
     private Role role = Role.ROLE_STUDENT;
 
     @Column(name = "is_active", nullable = false)

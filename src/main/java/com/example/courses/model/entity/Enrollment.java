@@ -33,26 +33,21 @@ public class Enrollment {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    @NotNull(message = "Trạng thái đăng ký không được để trống")
     private EnrollmentStatus status = EnrollmentStatus.ENROLLED;
 
     @Column(name = "completion_date")
     private LocalDateTime completionDate;
 
     @Column(name = "progress_percentage", nullable = false, precision = 5, scale = 2)
-    @DecimalMin(value = "0.0", message = "Tiến độ phải >= 0%")
-    @DecimalMax(value = "100.0", message = "Tiến độ phải <= 100%")
     private BigDecimal progressPercentage = BigDecimal.ZERO;
 
     // Relationships
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id", nullable = false)
-    @NotNull(message = "Student không được để trống")
     private User student;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "course_id", nullable = false)
-    @NotNull(message = "Course không được để trống")
     private Course course;
 
     @OneToMany(mappedBy = "enrollment", cascade = CascadeType.ALL, orphanRemoval = true)

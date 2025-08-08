@@ -27,18 +27,15 @@ public class Course {
     private Integer courseId;
 
     @Column(name = "title", nullable = false)
-    @NotBlank(message = "Tiêu đề khóa học không được để trống")
     private String title;
 
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
     @Column(name = "teacher_id", nullable = false)
-    @NotNull(message = "Teacher ID không được để trống")
     private Integer teacherId;
 
     @Column(name = "price", nullable = false, precision = 10, scale = 2)
-    @DecimalMin(value = "0.0", message = "Giá phải >= 0")
     private BigDecimal price = BigDecimal.ZERO;
 
     @Column(name = "duration_hours")
