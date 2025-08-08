@@ -27,7 +27,6 @@ public class DataResponse<T> {
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime timestamp = LocalDateTime.now();
 
-    // Static methods for convenient response creation
     public static <T> DataResponse<T> success(T data, String message) {
         return DataResponse.<T>builder()
                 .success(true)
@@ -38,6 +37,14 @@ public class DataResponse<T> {
 
     public static <T> DataResponse<T> success(T data) {
         return success(data, "Thao tác thành công");
+    }
+
+    public static <T> DataResponse<T> success(String message) {
+        return DataResponse.<T>builder()
+                .success(true)
+                .message(message)
+                .data(null)
+                .build();
     }
 
     public static <T> DataResponse<T> error(String message, Map<String, String> errors) {

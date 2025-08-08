@@ -15,6 +15,7 @@ import com.example.courses.service.CourseService;
 import com.example.courses.service.LessonService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -22,13 +23,17 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collection;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/courses")
 @RequiredArgsConstructor
+@Slf4j
 public class CourseController {
 
     private final CourseService courseService;
@@ -36,12 +41,9 @@ public class CourseController {
 
     /**
      * GET /api/courses - Lấy danh sách tất cả khóa học với các tùy chọn lọc
-     * Hỗ trợ các tham số:
-     * - search: tìm kiếm theo từ khóa trong tiêu đề/mô tả
-     * - teacher_id: lọc theo giảng viên
-     * - status: lọc theo trạng thái khóa học
-     * - keyword: tìm kiếm theo từ khóa (tương tự search)
-     * Quyền: AUTHENTICATED
+     * Logic phân quyền status:
+     * - ADMIN: có thể xem tất cả trạng thái (DRAFT, PUBLISHED, ARCHIVED)
+     * - STUDENT/TEACHER: chỉ được xem PUBLISHED
      */
     @GetMapping
     public ResponseEntity<DataResponse<Page<CourseResponse>>> getAllCourses(
@@ -49,12 +51,16 @@ public class CourseController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir,
-            @RequestParam(required = false) CourseStatus status,
+            @RequestParam(required = false) String status,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String search,
-            @RequestParam(name = "teacher_id", required = false) Integer teacherId
+            @RequestParam(name = "teacher_id", required = false) Integer teacherId,
+            Authentication authentication
     ) {
         try {
+            // Xử lý và validate status parameter
+            CourseStatus courseStatus = processStatusParameter(status, authentication);
+
             Sort sort = sortDir.equalsIgnoreCase("desc")
                     ? Sort.by(sortBy).descending()
                     : Sort.by(sortBy).ascending();
@@ -64,11 +70,17 @@ public class CourseController {
             // Ưu tiên search parameter hơn keyword parameter
             String searchKeyword = search != null ? search : keyword;
 
-            Page<CourseResponse> courses = courseService.getAllCoursesWithFilters(
-                    pageable, status, searchKeyword, teacherId);
+            Page<CourseResponse> courses = courseService.getAllCoursesWithRoleBasedFilters(
+                    pageable, courseStatus, searchKeyword, teacherId, authentication);
 
             return ResponseEntity.ok(DataResponse.success(courses, "Lấy danh sách khóa học thành công"));
+
+        } catch (BadRequestException e) {
+            log.warn("Bad request in getAllCourses: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(DataResponse.error(e.getMessage()));
         } catch (Exception e) {
+            log.error("Error getting course list: ", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(DataResponse.error("Lỗi khi lấy danh sách khóa học: " + e.getMessage()));
         }
@@ -76,7 +88,7 @@ public class CourseController {
 
     /**
      * GET /api/courses/search - Endpoint riêng cho tìm kiếm khóa học
-     * Quyền: AUTHENTICATED
+     * Áp dụng cùng logic phân quyền status như getAllCourses
      */
     @GetMapping("/search")
     public ResponseEntity<DataResponse<Page<CourseResponse>>> searchCourses(
@@ -85,8 +97,9 @@ public class CourseController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir,
-            @RequestParam(required = false) CourseStatus status,
-            @RequestParam(name = "teacher_id", required = false) Integer teacherId
+            @RequestParam(required = false) String status,
+            @RequestParam(name = "teacher_id", required = false) Integer teacherId,
+            Authentication authentication
     ) {
         try {
             // Validate keyword không được rỗng
@@ -95,17 +108,26 @@ public class CourseController {
                         .body(DataResponse.error("Từ khóa tìm kiếm không được để trống"));
             }
 
+            // Xử lý và validate status parameter
+            CourseStatus courseStatus = processStatusParameter(status, authentication);
+
             Sort sort = sortDir.equalsIgnoreCase("desc")
                     ? Sort.by(sortBy).descending()
                     : Sort.by(sortBy).ascending();
 
             Pageable pageable = PageRequest.of(page, size, sort);
-            Page<CourseResponse> courses = courseService.getAllCoursesWithFilters(
-                    pageable, status, keyword.trim(), teacherId);
+            Page<CourseResponse> courses = courseService.getAllCoursesWithRoleBasedFilters(
+                    pageable, courseStatus, keyword.trim(), teacherId, authentication);
 
             return ResponseEntity.ok(DataResponse.success(courses,
                     "Tìm kiếm khóa học với từ khóa '" + keyword + "' thành công"));
+
+        } catch (BadRequestException e) {
+            log.warn("Bad request in searchCourses: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(DataResponse.error(e.getMessage()));
         } catch (Exception e) {
+            log.error("Error searching courses: ", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(DataResponse.error("Lỗi khi tìm kiếm khóa học: " + e.getMessage()));
         }
@@ -113,7 +135,7 @@ public class CourseController {
 
     /**
      * GET /api/courses/by-teacher/{teacherId} - Lấy danh sách khóa học theo giảng viên
-     * Quyền: AUTHENTICATED
+     * Áp dụng cùng logic phân quyền status
      */
     @GetMapping("/by-teacher/{teacherId}")
     public ResponseEntity<DataResponse<Page<CourseResponse>>> getCoursesByTeacher(
@@ -122,24 +144,78 @@ public class CourseController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir,
-            @RequestParam(required = false) CourseStatus status,
-            @RequestParam(required = false) String keyword
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String keyword,
+            Authentication authentication
     ) {
         try {
+            // Xử lý và validate status parameter
+            CourseStatus courseStatus = processStatusParameter(status, authentication);
+
             Sort sort = sortDir.equalsIgnoreCase("desc")
                     ? Sort.by(sortBy).descending()
                     : Sort.by(sortBy).ascending();
 
             Pageable pageable = PageRequest.of(page, size, sort);
-            Page<CourseResponse> courses = courseService.getAllCoursesWithFilters(
-                    pageable, status, keyword, teacherId);
+            Page<CourseResponse> courses = courseService.getAllCoursesWithRoleBasedFilters(
+                    pageable, courseStatus, keyword, teacherId, authentication);
 
             return ResponseEntity.ok(DataResponse.success(courses,
                     "Lấy danh sách khóa học của giảng viên thành công"));
+
+        } catch (BadRequestException e) {
+            log.warn("Bad request in getCoursesByTeacher: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(DataResponse.error(e.getMessage()));
         } catch (Exception e) {
+            log.error("Error getting courses by teacher: ", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(DataResponse.error("Lỗi khi lấy danh sách khóa học theo giảng viên: " + e.getMessage()));
         }
+    }
+
+    /**
+     * Xử lý status parameter theo quyền hạn của người dùng
+     * @param status - status string từ request parameter
+     * @param authentication - thông tin xác thực của user
+     * @return CourseStatus đã được validate theo quyền hạn
+     * @throws BadRequestException nếu status không hợp lệ
+     */
+    private CourseStatus processStatusParameter(String status, Authentication authentication) throws BadRequestException {
+        // Nếu không truyền status, trả về null để lấy tất cả (theo quyền hạn)
+        if (status == null || status.trim().isEmpty()) {
+            return null;
+        }
+
+        // Parse status string thành enum
+        CourseStatus courseStatus;
+        try {
+            courseStatus = CourseStatus.valueOf(status.toUpperCase().trim());
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("Status không hợp lệ. Các giá trị cho phép: DRAFT, PUBLISHED, ARCHIVED");
+        }
+
+        // Kiểm tra quyền hạn theo role
+        boolean isAdmin = hasRole(authentication, "ADMIN");
+
+        if (!isAdmin && courseStatus != CourseStatus.PUBLISHED) {
+            throw new BadRequestException("Bạn chỉ có quyền xem khóa học có trạng thái PUBLISHED");
+        }
+
+        return courseStatus;
+    }
+
+    /**
+     * Kiểm tra user có role cụ thể hay không
+     */
+    private boolean hasRole(Authentication authentication, String role) {
+        if (authentication == null) {
+            return false;
+        }
+
+        Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
+        return authorities.stream()
+                .anyMatch(authority -> authority.getAuthority().equals("ROLE_" + role));
     }
 
     /**

@@ -25,4 +25,5 @@ public interface CourseRepository extends JpaRepository<Course, Integer> {
                                         @Param("teacherId") Integer teacherId,
                                         @Param("keyword") String keyword,
                                         Pageable pageable);
+
 }

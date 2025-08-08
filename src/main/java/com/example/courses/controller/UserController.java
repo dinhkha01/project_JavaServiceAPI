@@ -37,10 +37,12 @@ public class UserController {
             @RequestParam(defaultValue = "userId") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir,
             @RequestParam(required = false) Role role,
-            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) String status,
             @RequestParam(required = false) String keyword) {
 
         try {
+            // Chuyển đổi status từ chuỗi sang Boolean
+            Boolean isActive = convertStatusToBoolean(status);
             UserListResponse userList = userService.getAllUsers(
                     page, size, sortBy, sortDir, role, isActive, keyword
             );
@@ -50,6 +52,10 @@ public class UserController {
                     "Lấy danh sách người dùng thành công"
             ));
 
+        } catch (BadRequestException e) {
+            log.error("Bad request in getAllUsers: ", e);
+            return ResponseEntity.badRequest()
+                    .body(DataResponse.error(e.getMessage()));
         } catch (Exception e) {
             log.error("Error getting user list: ", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -172,5 +178,23 @@ public class UserController {
             return ((UserDetails) authentication.getPrincipal()).getUsername();
         }
         return null;
+    }
+
+
+
+    private Boolean convertStatusToBoolean(String status) throws BadRequestException {
+        if (status == null || status.trim().isEmpty()) {
+            return null;
+        }
+
+        switch (status.toLowerCase().trim()) {
+            case "active":
+                return true;
+            case "inactive":
+                return false;
+            default:
+
+                throw new BadRequestException("Status phải là 'active' hoặc 'inactive', nhận được: " + status);
+        }
     }
 }

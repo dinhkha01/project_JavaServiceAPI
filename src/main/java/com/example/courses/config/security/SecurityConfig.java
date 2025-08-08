@@ -138,6 +138,12 @@ public class SecurityConfig {
                         // PUT /api/enrollments/{id}/complete_lesson/{lesson_id} - Hoàn thành bài học
                         .requestMatchers(HttpMethod.PUT, "/api/enrollments/*/complete_lesson/*").hasAnyRole("STUDENT", "ADMIN")
 
+                        // API notifycations
+                        .requestMatchers(HttpMethod.GET,"/api/notifications").authenticated()
+                        .requestMatchers(HttpMethod.PUT,"/api/notifications/*/read").authenticated()
+                        .requestMatchers(HttpMethod.POST,"/api/notifications").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE,"/api/notifications/*").hasRole("ADMIN")
+
                         // ===== REVIEW ENDPOINTS - Cần xác thực =====
                         .requestMatchers("/api/reviews/**").authenticated()
 

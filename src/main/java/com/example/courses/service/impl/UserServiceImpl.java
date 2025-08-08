@@ -305,4 +305,5 @@ public class UserServiceImpl implements IUserService {
                 .updatedAt(user.getUpdatedAt())
                 .build();
     }
+
 }

@@ -21,10 +21,9 @@ public class Notification {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "notification_id")
     private Integer notificationId;
-
     @Column(name = "user_id", nullable = false)
     @NotNull(message = "User ID không được để trống")
-    private Integer userId;
+    private int userId;
 
     @Column(name = "message", nullable = false, columnDefinition = "TEXT")
     @NotBlank(message = "Nội dung thông báo không được để trống")
@@ -47,4 +46,5 @@ public class Notification {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private User user;
+
 }

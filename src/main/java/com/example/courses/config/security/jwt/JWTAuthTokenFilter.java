@@ -1,6 +1,6 @@
 package com.example.courses.config.security.jwt;
 
-import com.example.courses.service.TokenBlacklistService;
+import com.example.courses.service.impl.TokenBlacklistService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

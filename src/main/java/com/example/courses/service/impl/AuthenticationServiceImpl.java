@@ -13,7 +13,6 @@ import com.example.courses.model.entity.User;
 import com.example.courses.repository.IAccountRepository;
 import com.example.courses.config.security.jwt.JWTProvider;
 import com.example.courses.service.IAuthenticationService;
-import com.example.courses.service.TokenBlacklistService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
