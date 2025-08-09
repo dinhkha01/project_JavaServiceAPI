@@ -26,17 +26,12 @@ public class Review {
     private Integer reviewId;
 
     @Column(name = "course_id", nullable = false)
-    @NotNull(message = "Course ID không được để trống")
     private Integer courseId;
 
     @Column(name = "student_id", nullable = false)
-    @NotNull(message = "Student ID không được để trống")
     private Integer studentId;
 
     @Column(name = "rating", nullable = false)
-    @NotNull(message = "Điểm đánh giá không được để trống")
-    @Min(value = 1, message = "Điểm đánh giá phải từ 1 đến 5")
-    @Max(value = 5, message = "Điểm đánh giá phải từ 1 đến 5")
     private Integer rating;
 
     @Column(name = "comment", columnDefinition = "TEXT")
