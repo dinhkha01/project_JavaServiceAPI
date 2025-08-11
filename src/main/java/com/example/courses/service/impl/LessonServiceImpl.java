@@ -2,10 +2,10 @@ package com.example.courses.service.impl;
 
 import com.example.courses.exception.BadRequestException;
 import com.example.courses.exception.NotFoundException;
-import com.example.courses.model.dto.request.LessonCreateRequest;
-import com.example.courses.model.dto.request.LessonUpdateRequest;
-import com.example.courses.model.dto.response.LessonDetailResponse;
-import com.example.courses.model.dto.response.LessonResponse;
+import com.example.courses.model.dto.request.lesson.LessonCreateRequest;
+import com.example.courses.model.dto.request.lesson.LessonUpdateRequest;
+import com.example.courses.model.dto.response.lesson.LessonDetailResponse;
+import com.example.courses.model.dto.response.lesson.LessonResponse;
 import com.example.courses.model.entity.Course;
 import com.example.courses.model.entity.Lesson;
 import com.example.courses.repository.CourseRepository;
@@ -124,6 +124,35 @@ public class LessonServiceImpl implements LessonService {
         lessonRepository.delete(lesson);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<LessonResponse> getPublishedLessonsByCourse(Integer courseId) throws NotFoundException {
+        // Kiểm tra khóa học tồn tại
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy khóa học với ID: " + courseId));
+
+        // Lấy danh sách bài học đã xuất bản, sắp xếp theo orderIndex
+        List<Lesson> publishedLessons = lessonRepository.findByCourseAndIsPublishedTrueOrderByOrderIndexAsc(course);
+
+        return publishedLessons.stream()
+                .map(this::convertToLessonResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public LessonDetailResponse getPublishedLessonDetail(Integer lessonId) throws NotFoundException {
+        Lesson lesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy bài học với ID: " + lessonId));
+
+        // Kiểm tra bài học đã được xuất bản chưa
+        if (!Boolean.TRUE.equals(lesson.getIsPublished())) {
+            throw new NotFoundException("Bài học chưa được xuất bản hoặc không tồn tại");
+        }
+
+        return convertToLessonDetailResponse(lesson);
+    }
+
     /**
      * Kiểm tra quyền TEACHER cho khóa học
      * ADMIN có thể thao tác mọi khóa học
@@ -173,36 +202,6 @@ public class LessonServiceImpl implements LessonService {
                 .updatedAt(lesson.getUpdatedAt())
                 .build();
     }
-    @Override
-    @Transactional(readOnly = true)
-    public List<LessonResponse> getPublishedLessonsByCourse(Integer courseId) throws NotFoundException {
-        // Kiểm tra khóa học tồn tại
-        Course course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new NotFoundException("Không tìm thấy khóa học với ID: " + courseId));
-
-        // Lấy danh sách bài học đã xuất bản, sắp xếp theo orderIndex
-        List<Lesson> publishedLessons = lessonRepository.findByCourseAndIsPublishedTrueOrderByOrderIndexAsc(course);
-
-        return publishedLessons.stream()
-                .map(this::convertToLessonResponse)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public LessonDetailResponse getPublishedLessonDetail(Integer lessonId) throws NotFoundException {
-        Lesson lesson = lessonRepository.findById(lessonId)
-                .orElseThrow(() -> new NotFoundException("Không tìm thấy bài học với ID: " + lessonId));
-
-        // Kiểm tra bài học đã được xuất bản chưa
-        if (!Boolean.TRUE.equals(lesson.getIsPublished())) {
-            throw new NotFoundException("Bài học chưa được xuất bản hoặc không tồn tại");
-        }
-
-        return convertToLessonDetailResponse(lesson);
-    }
-
-
 
     private LessonDetailResponse convertToLessonDetailResponse(Lesson lesson) {
         return LessonDetailResponse.builder()

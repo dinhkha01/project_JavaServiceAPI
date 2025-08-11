@@ -1,9 +1,11 @@
 package com.example.courses.service;
 
 import com.example.courses.model.dto.request.*;
+import com.example.courses.model.dto.request.LessonProgress.CompleteLessonRequestDTO;
+import com.example.courses.model.dto.response.course.CompleteLessonResponseDTO;
 import com.example.courses.model.dto.response.DataResponse;
-import com.example.courses.model.dto.response.EnrollmentDetailResponseDTO;
-import com.example.courses.model.dto.response.EnrollmentResponseDTO;
+import com.example.courses.model.dto.response.enrollment.EnrollmentDetailResponseDTO;
+import com.example.courses.model.dto.response.enrollment.EnrollmentResponseDTO;
 import org.springframework.data.domain.Page;
 
 /**

@@ -1,6 +1,7 @@
 
 package com.example.courses.model.dto.request;
 
+import com.example.courses.model.entity.TypeNotification;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -13,6 +14,6 @@ public class NotificationRequest {
     @NotBlank(message = "Message không được để trống")
     private String message;
 
-    private String type;
+    private TypeNotification type;
     private String targetUrl;
 }

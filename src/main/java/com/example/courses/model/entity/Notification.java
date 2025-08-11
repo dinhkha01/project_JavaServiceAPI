@@ -29,8 +29,9 @@ public class Notification {
     @NotBlank(message = "Nội dung thông báo không được để trống")
     private String message;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "type", length = 50)
-    private String type;
+    private TypeNotification type;
 
     @Column(name = "target_url", length = 500)
     private String targetUrl;

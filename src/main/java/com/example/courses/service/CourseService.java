@@ -2,10 +2,10 @@ package com.example.courses.service;
 
 import com.example.courses.exception.BadRequestException;
 import com.example.courses.exception.NotFoundException;
-import com.example.courses.model.dto.request.CourseCreateRequest;
-import com.example.courses.model.dto.request.CourseUpdateRequest;
-import com.example.courses.model.dto.response.CourseDetailResponse;
-import com.example.courses.model.dto.response.CourseResponse;
+import com.example.courses.model.dto.request.course.CourseCreateRequest;
+import com.example.courses.model.dto.request.course.CourseUpdateRequest;
+import com.example.courses.model.dto.response.course.CourseDetailResponse;
+import com.example.courses.model.dto.response.course.CourseResponse;
 import com.example.courses.model.entity.CourseStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

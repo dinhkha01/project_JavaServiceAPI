@@ -2,11 +2,11 @@ package com.example.courses.service;
 
 import com.example.courses.exception.BadRequestException;
 import com.example.courses.exception.NotFoundException;
-import com.example.courses.model.dto.request.CreateUserRequest;
-import com.example.courses.model.dto.request.UpdateUserInfoRequest;
-import com.example.courses.model.dto.request.ChangePasswordRequest;
-import com.example.courses.model.dto.response.UserDetailResponse;
-import com.example.courses.model.dto.response.UserListResponse;
+import com.example.courses.model.dto.request.user.CreateUserRequest;
+import com.example.courses.model.dto.request.user.UpdateUserInfoRequest;
+import com.example.courses.model.dto.request.auth.ChangePasswordRequest;
+import com.example.courses.model.dto.response.user.UserDetailResponse;
+import com.example.courses.model.dto.response.user.UserListResponse;
 import com.example.courses.model.entity.Role;
 
 /**

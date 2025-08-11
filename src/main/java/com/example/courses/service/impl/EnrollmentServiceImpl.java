@@ -1,7 +1,13 @@
 package com.example.courses.service.impl;
 
 import com.example.courses.model.dto.request.*;
+import com.example.courses.model.dto.request.LessonProgress.CompleteLessonRequestDTO;
 import com.example.courses.model.dto.response.*;
+import com.example.courses.model.dto.response.course.CompleteLessonResponseDTO;
+import com.example.courses.model.dto.response.course.CourseBasicDTO;
+import com.example.courses.model.dto.response.enrollment.EnrollmentDetailResponseDTO;
+import com.example.courses.model.dto.response.enrollment.EnrollmentResponseDTO;
+import com.example.courses.model.dto.response.lesson.LessonProgressDTO;
 import com.example.courses.model.entity.*;
 import com.example.courses.repository.*;
 import com.example.courses.service.EnrollmentService;

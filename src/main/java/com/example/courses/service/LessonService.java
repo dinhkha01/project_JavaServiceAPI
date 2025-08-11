@@ -2,10 +2,10 @@ package com.example.courses.service;
 
 import com.example.courses.exception.BadRequestException;
 import com.example.courses.exception.NotFoundException;
-import com.example.courses.model.dto.request.LessonCreateRequest;
-import com.example.courses.model.dto.request.LessonUpdateRequest;
-import com.example.courses.model.dto.response.LessonDetailResponse;
-import com.example.courses.model.dto.response.LessonResponse;
+import com.example.courses.model.dto.request.lesson.LessonCreateRequest;
+import com.example.courses.model.dto.request.lesson.LessonUpdateRequest;
+import com.example.courses.model.dto.response.lesson.LessonDetailResponse;
+import com.example.courses.model.dto.response.lesson.LessonResponse;
 
 import java.util.List;
 

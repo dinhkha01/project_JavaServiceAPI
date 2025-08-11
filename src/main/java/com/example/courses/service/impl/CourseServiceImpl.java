@@ -2,12 +2,12 @@ package com.example.courses.service.impl;
 
 import com.example.courses.exception.BadRequestException;
 import com.example.courses.exception.NotFoundException;
-import com.example.courses.model.dto.request.CourseCreateRequest;
-import com.example.courses.model.dto.request.CourseUpdateRequest;
-import com.example.courses.model.dto.response.CourseDetailResponse;
-import com.example.courses.model.dto.response.CourseResponse;
-import com.example.courses.model.dto.response.LessonResponse;
-import com.example.courses.model.dto.response.ReviewResponse;
+import com.example.courses.model.dto.request.course.CourseCreateRequest;
+import com.example.courses.model.dto.request.course.CourseUpdateRequest;
+import com.example.courses.model.dto.response.course.CourseDetailResponse;
+import com.example.courses.model.dto.response.course.CourseResponse;
+import com.example.courses.model.dto.response.lesson.LessonResponse;
+import com.example.courses.model.dto.response.review.ReviewResponse;
 import com.example.courses.model.entity.Course;
 import com.example.courses.model.entity.CourseStatus;
 import com.example.courses.model.entity.User;

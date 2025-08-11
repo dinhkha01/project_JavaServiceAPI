@@ -4,6 +4,7 @@ import com.example.courses.exception.NotFoundException;
 import com.example.courses.model.dto.request.NotificationRequest;
 import com.example.courses.model.dto.response.NotificationResponse;
 import com.example.courses.model.entity.Notification;
+import com.example.courses.model.entity.TypeNotification;
 import com.example.courses.model.entity.User;
 import com.example.courses.repository.NotificationRepository;
 import com.example.courses.repository.UserRepository;

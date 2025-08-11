@@ -1,13 +1,13 @@
 package com.example.courses.service.impl;
 
-import com.example.courses.model.dto.request.FormLogin;
-import com.example.courses.model.dto.request.FormRegister;
-import com.example.courses.model.dto.request.LogoutRequest;
-import com.example.courses.model.dto.request.TokenVerifyRequest;
-import com.example.courses.model.dto.response.JwtResponse;
-import com.example.courses.model.dto.response.LogoutResponse;
-import com.example.courses.model.dto.response.TokenVerifyResponse;
-import com.example.courses.model.dto.response.UserProfileResponse;
+import com.example.courses.model.dto.request.auth.FormLogin;
+import com.example.courses.model.dto.request.auth.FormRegister;
+import com.example.courses.model.dto.request.auth.LogoutRequest;
+import com.example.courses.model.dto.request.auth.TokenVerifyRequest;
+import com.example.courses.model.dto.response.auth.JwtResponse;
+import com.example.courses.model.dto.response.auth.LogoutResponse;
+import com.example.courses.model.dto.response.auth.TokenVerifyResponse;
+import com.example.courses.model.dto.response.user.UserProfileResponse;
 import com.example.courses.model.entity.Role;
 import com.example.courses.model.entity.User;
 import com.example.courses.repository.IAccountRepository;
@@ -55,7 +55,7 @@ public class AuthenticationServiceImpl implements IAuthenticationService {
                     .build();
         } catch (Exception e) {
             log.error("Login failed for user: {}", request.getUsername(), e);
-            throw new RuntimeException("Đăng nhập thất bại: " + e.getMessage());
+            throw new RuntimeException("Đăng nhập thất bại: " + "email hoặc mật khẩu không đúng");
         }
     }
 

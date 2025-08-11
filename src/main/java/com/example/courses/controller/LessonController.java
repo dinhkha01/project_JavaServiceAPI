@@ -2,12 +2,11 @@ package com.example.courses.controller;
 
 import com.example.courses.exception.BadRequestException;
 import com.example.courses.exception.NotFoundException;
-import com.example.courses.model.dto.request.LessonCreateRequest;
-import com.example.courses.model.dto.request.LessonUpdateIsPublish;
-import com.example.courses.model.dto.request.LessonUpdateRequest;
+import com.example.courses.model.dto.request.lesson.LessonUpdateIsPublish;
+import com.example.courses.model.dto.request.lesson.LessonUpdateRequest;
 import com.example.courses.model.dto.response.DataResponse;
-import com.example.courses.model.dto.response.LessonDetailResponse;
-import com.example.courses.model.dto.response.LessonResponse;
+import com.example.courses.model.dto.response.lesson.LessonDetailResponse;
+import com.example.courses.model.dto.response.lesson.LessonResponse;
 import com.example.courses.service.LessonService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -50,7 +49,7 @@ public class LessonController {
      */
     @PutMapping("{lessonId}")
 
-    public ResponseEntity<DataResponse<LessonResponse>> updateLesson(
+    public ResponseEntity<DataResponse<LessonResponse>> updateLesson (
             @PathVariable Integer lessonId,
             @Valid @RequestBody LessonUpdateRequest request) throws NotFoundException, BadRequestException {
 

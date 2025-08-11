@@ -1,14 +1,14 @@
 package com.example.courses.controller;
 
-import com.example.courses.model.dto.request.FormLogin;
-import com.example.courses.model.dto.request.FormRegister;
-import com.example.courses.model.dto.request.LogoutRequest;
-import com.example.courses.model.dto.request.TokenVerifyRequest;
+import com.example.courses.model.dto.request.auth.FormLogin;
+import com.example.courses.model.dto.request.auth.FormRegister;
+import com.example.courses.model.dto.request.auth.LogoutRequest;
+import com.example.courses.model.dto.request.auth.TokenVerifyRequest;
 import com.example.courses.model.dto.response.DataResponse;
-import com.example.courses.model.dto.response.JwtResponse;
-import com.example.courses.model.dto.response.LogoutResponse;
-import com.example.courses.model.dto.response.TokenVerifyResponse;
-import com.example.courses.model.dto.response.UserProfileResponse;
+import com.example.courses.model.dto.response.auth.JwtResponse;
+import com.example.courses.model.dto.response.auth.LogoutResponse;
+import com.example.courses.model.dto.response.auth.TokenVerifyResponse;
+import com.example.courses.model.dto.response.user.UserProfileResponse;
 import com.example.courses.model.entity.User;
 import com.example.courses.config.security.principal.UserDetailsCus;
 import com.example.courses.service.IAuthenticationService;
@@ -34,14 +34,10 @@ public class AuthController {
      */
     @PostMapping("/login")
     public ResponseEntity<DataResponse<JwtResponse>> login(@Valid @RequestBody FormLogin request) {
-        try {
+
             JwtResponse jwtResponse = authenticationService.login(request);
             return ResponseEntity.ok(DataResponse.success(jwtResponse, "Đăng nhập thành công"));
-        } catch (Exception e) {
-            log.error("Login failed: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(DataResponse.error("Đăng nhập thất bại: " + e.getMessage()));
-        }
+
     }
 
     /**

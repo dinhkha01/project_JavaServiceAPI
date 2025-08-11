@@ -2,11 +2,11 @@ package com.example.courses.controller;
 
 import com.example.courses.exception.BadRequestException;
 import com.example.courses.exception.NotFoundException;
-import com.example.courses.model.dto.request.ReviewCreateRequest;
-import com.example.courses.model.dto.request.ReviewUpdateRequest;
+import com.example.courses.model.dto.request.review.ReviewCreateRequest;
+import com.example.courses.model.dto.request.review.ReviewUpdateRequest;
 import com.example.courses.model.dto.response.DataResponse;
-import com.example.courses.model.dto.response.ReviewListResponse;
-import com.example.courses.model.dto.response.ReviewResponse;
+import com.example.courses.model.dto.response.review.ReviewListResponse;
+import com.example.courses.model.dto.response.review.ReviewResponse;
 import com.example.courses.service.ReviewService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

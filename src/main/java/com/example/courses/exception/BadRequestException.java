@@ -1,7 +1,11 @@
 package com.example.courses.exception;
 
+import lombok.Getter;
+import lombok.Setter;
 import java.util.Map;
 
+@Setter
+@Getter
 public class BadRequestException extends Exception {
     private Map<String, String> details;
 
@@ -20,14 +24,6 @@ public class BadRequestException extends Exception {
 
     public BadRequestException(String message, Map<String, String> details, Throwable cause) {
         super(message, cause);
-        this.details = details;
-    }
-
-    public Map<String, String> getDetails() {
-        return details;
-    }
-
-    public void setDetails(Map<String, String> details) {
         this.details = details;
     }
 }

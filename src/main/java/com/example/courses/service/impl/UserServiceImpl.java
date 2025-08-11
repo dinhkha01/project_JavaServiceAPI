@@ -2,12 +2,16 @@ package com.example.courses.service.impl;
 
 import com.example.courses.exception.BadRequestException;
 import com.example.courses.exception.NotFoundException;
-import com.example.courses.model.dto.request.CreateUserRequest;
-import com.example.courses.model.dto.request.UpdateUserInfoRequest;
-import com.example.courses.model.dto.request.ChangePasswordRequest;
-import com.example.courses.model.dto.response.*;
+import com.example.courses.model.dto.request.auth.FormRegister;
+import com.example.courses.model.dto.request.user.CreateUserRequest;
+import com.example.courses.model.dto.request.user.UpdateUserInfoRequest;
+import com.example.courses.model.dto.request.auth.ChangePasswordRequest;
+import com.example.courses.model.dto.response.user.UserDetailResponse;
+import com.example.courses.model.dto.response.user.UserListResponse;
+import com.example.courses.model.dto.response.user.UserSummaryResponse;
 import com.example.courses.model.entity.Role;
 import com.example.courses.model.entity.User;
+import com.example.courses.repository.IAccountRepository;
 import com.example.courses.repository.UserRepository;
 import com.example.courses.service.IUserService;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +38,7 @@ public class UserServiceImpl implements IUserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final IAccountRepository iAccountRepository;
 
     @Override
     public UserListResponse getAllUsers(int page, int size, String sortBy, String sortDir,
@@ -67,7 +72,7 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     public UserDetailResponse createUser(CreateUserRequest request) throws BadRequestException {
-        validateUniqueConstraints(request);
+        validateUserRegistration(request);
 
         User user = buildUserFromRequest(request);
         User savedUser = userRepository.save(user);
@@ -225,27 +230,9 @@ public class UserServiceImpl implements IUserService {
      */
     private User findUserByIdOrThrow(Integer userId) throws NotFoundException {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Không tìm thấy người dùng với ID: " + userId));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng với ID: " + userId));
     }
 
-    /**
-     * Validate unique constraints for user creation
-     */
-    private void validateUniqueConstraints(CreateUserRequest request) throws BadRequestException {
-        Map<String, String> errors = new HashMap<>();
-
-        if (userRepository.existsByUsername(request.getUsername())) {
-            errors.put("username", "Username đã tồn tại");
-        }
-
-        if (userRepository.existsByEmail(request.getEmail())) {
-            errors.put("email", "Email đã được sử dụng");
-        }
-
-        if (!errors.isEmpty()) {
-            throw new BadRequestException("Dữ liệu không hợp lệ", errors);
-        }
-    }
 
     /**
      * Build User entity from CreateUserRequest
@@ -305,5 +292,13 @@ public class UserServiceImpl implements IUserService {
                 .updatedAt(user.getUpdatedAt())
                 .build();
     }
+    private void validateUserRegistration(CreateUserRequest request) {
+        if (iAccountRepository.existsByUsername(request.getUsername())) {
+            throw new RuntimeException("Username đã tồn tại trong hệ thống");
+        }
+        if (iAccountRepository.existsByEmail(request.getEmail())) {
+            throw new RuntimeException("Email đã tồn tại trong hệ thống");
+        }
 
+    }
 }
